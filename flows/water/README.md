@@ -15,7 +15,7 @@ from this repository. The first calculation downloads the skala-1.1 checkpoint
 from Hugging Face (about once; it is cached in `~/.cache/huggingface`).
 
 On a GPU, use the Colab notebook
-[`water_flows_colab.ipynb`](water_flows_colab.ipynb) or install `skala-cuda12x`
+[`water_flows_colab.ipynb`](water_flows_colab.ipynb) or install `skala-cuda12x` (or `skala-cuda13x` on a CUDA 13 driver)
 and add `--device cuda` to any command.
 
 ## Usage
@@ -73,6 +73,11 @@ Silicon MacBook Air (CPU, about 2.5 minutes):
 | ZPE (eV) | 0.590 | |
 | S at 298 K (J mol⁻¹ K⁻¹) | 188.6 | 188.8 |
 | Dipole (D, at the ideal starting geometry) | 2.08 | 1.855 |
+
+The same run on a Colab Tesla T4 (`--device cuda`) took 140 s and agreed with the
+CPU run to within 1×10⁻⁷ Ha in energy and 0.3 cm⁻¹ in frequency. For a
+3-atom molecule the GPU is barely faster than a laptop CPU; it pays off for
+larger molecules.
 
 Compare Skala's frequencies with the **harmonic** experimental values; the
 observed fundamentals are lower because of anharmonicity. The dipole is
