@@ -14,8 +14,12 @@ from .core import EV_TO_CM, HARTREE_EV, Run, Settings, geometry_summary, make_ca
 
 
 def _geometry_lines(run: Run, g: dict) -> None:
-    run.say(f"  O-H  {g['r_OH1_A']:.4f}  {g['r_OH2_A']:.4f} A   (exp. r_e {ref.R_OH:.4f})")
-    run.say(f"  H-O-H {g['angle_HOH_deg']:.2f} deg            (exp. theta_e {ref.ANGLE_HOH:.2f})")
+    run.say(
+        f"  O-H  {g['r_OH1_A']:.4f}  {g['r_OH2_A']:.4f} A   (exp. r_e {ref.R_OH:.4f})"
+    )
+    run.say(
+        f"  H-O-H {g['angle_HOH_deg']:.2f} deg            (exp. theta_e {ref.ANGLE_HOH:.2f})"
+    )
 
 
 def single_point(atoms, s: Settings, run: Run) -> None:
@@ -41,7 +45,9 @@ def optimize(atoms, s: Settings, run: Run) -> None:
     """Relax the geometry until the largest force is below s.fmax."""
     run.say(f"\n== Geometry optimization (fmax {s.fmax} eV/A) ==")
     e0 = atoms.get_potential_energy()
-    opt = BFGS(atoms, trajectory=str(run.dir / "opt.traj"), logfile=str(run.dir / "opt.log"))
+    opt = BFGS(
+        atoms, trajectory=str(run.dir / "opt.traj"), logfile=str(run.dir / "opt.log")
+    )
     converged = bool(opt.run(fmax=s.fmax, steps=200))
     e = atoms.get_potential_energy()
     g = geometry_summary(atoms)
@@ -56,7 +62,9 @@ def optimize(atoms, s: Settings, run: Run) -> None:
         **g,
     }
     if not converged:
-        raise RuntimeError("Optimization did not converge; frequencies would not be meaningful.")
+        raise RuntimeError(
+            "Optimization did not converge; frequencies would not be meaningful."
+        )
 
 
 def frequencies(atoms, s: Settings, run: Run) -> None:
@@ -64,7 +72,9 @@ def frequencies(atoms, s: Settings, run: Run) -> None:
     run.say(f"\n== Harmonic frequencies (finite differences, step {s.fd_step} A) ==")
     fmax = float(np.linalg.norm(atoms.get_forces(), axis=1).max())
     if fmax > 10 * s.fmax:
-        run.say(f"  WARNING: max |F| = {fmax:.3f} eV/A, not a stationary point. Run 'opt' first.")
+        run.say(
+            f"  WARNING: max |F| = {fmax:.3f} eV/A, not a stationary point. Run 'opt' first."
+        )
     ir = Infrared(atoms, name=str(run.dir / "vib"), delta=s.fd_step, nfree=2)
     ir.run()
     ir.read()
@@ -92,8 +102,12 @@ def frequencies(atoms, s: Settings, run: Run) -> None:
         modes.append({"label": label, "freq_cm": float(w), "ir_km_mol": inten})
     n_imag = sum(m["freq_cm"] < 0 for m in modes)
     zpe = 0.5 * sum(m["freq_cm"] for m in modes if m["freq_cm"] > 0) / EV_TO_CM
-    run.say(f"  imaginary modes {n_imag}   ZPE {zpe:.4f} eV ({zpe / HARTREE_EV:.6f} Ha)")
-    run.say(f"  trans./rot. residual before projection {raw_rest:.1f} cm-1 (DFT grid; removed)")
+    run.say(
+        f"  imaginary modes {n_imag}   ZPE {zpe:.4f} eV ({zpe / HARTREE_EV:.6f} Ha)"
+    )
+    run.say(
+        f"  trans./rot. residual before projection {raw_rest:.1f} cm-1 (DFT grid; removed)"
+    )
     run.results["frequencies"] = {
         "modes": modes,
         "n_imaginary": n_imag,
@@ -146,7 +160,9 @@ def thermo(atoms, s: Settings, run: Run) -> None:
     g = th.get_gibbs_energy(T, P, verbose=False)
     run.say(f"\n== Thermochemistry (ideal gas, {T} K, {P / 1000:.3f} kPa) ==")
     run.say(f"  H   {h / HARTREE_EV:.8f} Ha   (H - E = {(h - e) * 1000:.1f} meV)")
-    run.say(f"  S   {sv * 1000:.4f} meV/K = {sv * 96485.332:.2f} J/(mol K)   (exp. 188.8)")
+    run.say(
+        f"  S   {sv * 1000:.4f} meV/K = {sv * 96485.332:.2f} J/(mol K)   (exp. 188.8)"
+    )
     run.say(f"  G   {g / HARTREE_EV:.8f} Ha   (G - E = {(g - e) * 1000:.1f} meV)")
     run.results["thermo"] = {
         "T_K": T,
@@ -190,11 +206,15 @@ def scan(atoms, s: Settings, run: Run, coord: str = "angle", points: int = 9) ->
     fit = np.polyfit(values, rel, 4)
     xs = np.linspace(values[0], values[-1], 2001)
     v_min = float(xs[np.argmin(np.polyval(fit, xs))])
-    run.say(f"  fitted minimum at {v_min:.4f} {unit} (rigid scan: other coordinates held fixed)")
+    run.say(
+        f"  fitted minimum at {v_min:.4f} {unit} (rigid scan: other coordinates held fixed)"
+    )
     fig, ax = plt.subplots(figsize=(5, 3.5))
     ax.plot(values, rel, "o", label=s.xc)
     ax.plot(xs, np.polyval(fit, xs), "-", lw=1, label="quartic fit")
-    ax.set_xlabel(f"H-O-H angle ({unit})" if coord == "angle" else f"O-H distance ({unit})")
+    ax.set_xlabel(
+        f"H-O-H angle ({unit})" if coord == "angle" else f"O-H distance ({unit})"
+    )
     ax.set_ylabel("relative energy (meV)")
     ax.legend()
     fig.tight_layout()

@@ -9,6 +9,10 @@ import json
 import pytest
 from flows.water.__main__ import main
 
+# The shared opt -> freq -> thermo fixture takes ~3 min on a laptop and longer on
+# CI runners; lift the repository-wide 300 s per-test limit for this module.
+pytestmark = pytest.mark.timeout(1800)
+
 
 @pytest.fixture(scope="module")
 def results(tmp_path_factory):

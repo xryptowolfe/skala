@@ -39,7 +39,9 @@ def make_calculator(s: Settings) -> Skala:
 def load_water(s: Settings) -> Atoms:
     atoms = read(s.geometry) if s.geometry else molecule("H2O")
     if sorted(atoms.get_chemical_symbols()) != ["H", "H", "O"]:
-        raise ValueError(f"Expected one water molecule, got {atoms.get_chemical_formula()}")
+        raise ValueError(
+            f"Expected one water molecule, got {atoms.get_chemical_formula()}"
+        )
     # Put O first so atom indices are always O=0, H=1, H=2.
     order = np.argsort(
         [0 if sym == "O" else 1 for sym in atoms.get_chemical_symbols()], kind="stable"
@@ -84,7 +86,11 @@ class Run:
 
     def finish(self) -> None:
         self.results["wall_time_s"] = round(time.time() - self.t0, 1)
-        payload = {"settings": asdict(self.settings), "flows": self.flows, **self.results}
+        payload = {
+            "settings": asdict(self.settings),
+            "flows": self.flows,
+            **self.results,
+        }
         (self.dir / "results.json").write_text(json.dumps(payload, indent=2) + "\n")
         self.say(f"\nWall time {self.results['wall_time_s']} s. Results in {self.dir}/")
         (self.dir / "report.txt").write_text("\n".join(self.lines) + "\n")
