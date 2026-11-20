@@ -83,6 +83,84 @@ Compare Skala's frequencies with the **harmonic** experimental values; the
 observed fundamentals are lower because of anharmonicity. The dipole is
 overestimated partly because def2-TZVP has no diffuse functions.
 
+## Studies
+
+`python -m flows.water.studies <study>` runs larger comparisons built on the flows.
+Each writes `runs/<date-time>_study-<name>/` with `report.txt`, `results.json` and
+the sub-runs. Numbers below: Apple Silicon MacBook Air, CPU, def2-TZVP.
+
+### `functionals`: Skala versions vs traditional functionals (~25 min)
+
+Optimization and harmonic frequencies with each functional, D3 off for all.
+MAE is the mean absolute error of the three frequencies against the
+experimental harmonic values.
+
+| Functional | O–H (Å) | H–O–H (°) | Bend | Sym. | Asym. | MAE (cm⁻¹) | Time (s) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| SPW92 (LDA) | 0.9716 | 105.25 | 1533.9 | 3704.4 | 3818.5 | 122.1 | 11 |
+| PBE | 0.9710 | 104.28 | 1583.4 | 3691.5 | 3799.8 | 116.1 | 23 |
+| TPSS | 0.9692 | 104.46 | 1619.3 | 3703.3 | 3809.9 | 96.9 | 45 |
+| SCAN | 0.9620 | 104.49 | 1631.9 | 3794.7 | 3899.6 | 32.3 | 24 |
+| r2SCAN | 0.9624 | 104.49 | 1625.3 | 3793.6 | 3901.8 | 34.2 | 26 |
+| Skala-1.0 | 0.9515 | 105.05 | 1674.3 | 3942.6 | 4050.4 | 81.4 | 236 |
+| Skala-1.1 | 0.9596 | 103.93 | 1680.3 | 3865.4 | 3972.5 | 31.6 | 390–660 |
+| Experiment | 0.9578 | 104.48 | 1648.5 | 3832.2 | 3942.5 | | |
+
+Skala-1.1 has the best O–H bond length and ties SCAN for frequencies; its
+weak spot is the angle (−0.55°). `skala-1.1-rev0` gives the same results as
+`skala-1.1` (rev1) to 4×10⁻¹² Ha. On a CPU Skala costs 10–25× a meta-GGA.
+
+### `energetics`: open-shell thermochemistry (~8 min)
+
+O(³P), H, OH and H₂O⁺ run as unrestricted (UKS) calculations through the
+calculator's `charge` and `multiplicity` options.
+
+| Quantity | Skala-1.1 | Experiment | Error |
+|---|---:|---:|---:|
+| Atomization energy D0 (kcal/mol) | 215.62 | 219.36 | −3.74 |
+| O–H bond energy D0(H–OH) (kcal/mol) | 116.70 | 117.64 | −0.94 |
+| Ionization energy, adiabatic (eV) | 12.72 | 12.62 | +0.10 |
+| Ionization energy, vertical (eV) | 12.82 | 12.62 | +0.20 |
+
+ZPE comes from the Skala frequencies. The adiabatic ionization energy is
+electronic only, and atomic spin-orbit coupling (~0.2 kcal/mol) is ignored.
+
+### `dimer`: hydrogen bond in (H₂O)₂
+
+Interaction energy of the S22 water dimer at its reference geometry
+(reference CCSD(T)/CBS −5.02 kcal/mol), in kcal/mol. Takes ~6 min.
+
+| Functional | raw | CP | raw+D3 | CP+D3 | **QZVP+D3** | D3 part |
+|---|---:|---:|---:|---:|---:|---:|
+| PBE | −6.07 | −5.34 | −6.48 | −5.75 | **−5.72** | −0.41 |
+| r2SCAN | −5.95 | −5.42 | −6.08 | −5.55 | **−5.52** | −0.14 |
+| Skala-1.1 | −4.97 | n/a | −5.61 | n/a | **−4.92** | −0.64 |
+
+Columns are def2-TZVP unless noted. CP is the Boys–Bernardi counterpoise
+correction for basis-set superposition error, computed with ghost atoms.
+Skala's SCF does not converge with ghost atoms, so for Skala the error is
+judged instead from the raw interaction in def2-QZVP (QZVP+D3), where little
+superposition error remains: for PBE and r2SCAN, QZVP+D3 matches CP+D3 within
+0.03 kcal/mol. On that common footing Skala-1.1 with D3 is within
+0.1 kcal/mol of the reference, while PBE and r2SCAN overbind by 0.5–0.7.
+
+### `basis`: basis sets and density fitting (~12 min)
+
+| Basis | DF | E (Ha) | O–H (Å) | H–O–H (°) | Time (s) |
+|---|---|---:|---:|---:|---:|
+| def2-SVP | no | −76.32261479 | 0.9634 | 101.72 | 55 |
+| def2-SVP | yes | −76.32270670 | 0.9633 | 101.72 | 84 |
+| def2-TZVP | no | −76.42953492 | 0.9596 | 103.93 | 147 |
+| def2-TZVP | yes | −76.42967449 | 0.9596 | 103.94 | 92 |
+| def2-QZVP | no | −76.43877967 | 0.9575 | 103.70 | 133 |
+| def2-QZVP | yes | −76.43894628 | 0.9574 | 103.71 | 178 |
+
+def2-SVP is too small (angle 2.8° low). def2-TZVP and def2-QZVP agree within
+0.002 Å and 0.2°, so def2-TZVP is the default. Density fitting moves energies
+by 0.1–0.2 mHa and gives no consistent speedup for water: the neural XC
+evaluation, not the Coulomb term, dominates the cost. Timings vary by tens of
+percent between runs.
+
 ## How it works
 
 - **Optimization:** ASE BFGS on the Skala energy and analytic forces.
