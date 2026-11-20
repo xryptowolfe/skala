@@ -422,3 +422,4 @@ FodyWeavers.xsd
 # Local environment and flow outputs
 .venv/
 runs/
+/*.log

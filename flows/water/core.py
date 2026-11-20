@@ -30,10 +30,20 @@ class Settings:
     temperature: float = 298.15  # K
     pressure: float = 101325.0  # Pa
     geometry: str | None = None  # optional .xyz to start from instead of ideal H2O
+    density_fit: bool = False  # density-fitted Coulomb term
 
 
-def make_calculator(s: Settings) -> Skala:
-    return Skala(xc=s.xc, basis=s.basis, device=s.device, with_dftd3=s.dispersion)
+def make_calculator(s: Settings, charge: int = 0, multiplicity: int = 1) -> Skala:
+    """Skala ASE calculator. multiplicity > 1 or odd electron counts use UKS."""
+    return Skala(
+        xc=s.xc,
+        basis=s.basis,
+        device=s.device,
+        with_dftd3=s.dispersion,
+        with_density_fit=s.density_fit,
+        charge=charge,
+        multiplicity=multiplicity,
+    )
 
 
 def load_water(s: Settings) -> Atoms:

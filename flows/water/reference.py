@@ -15,3 +15,12 @@ MODES = [
     ("sym. stretch (v1)", 3832.2, 3657.1),
     ("asym. stretch (v3)", 3942.5, 3755.9),
 ]
+
+# Energetics (experiment / thermochemical tables)
+ATOMIZATION_D0_KCAL = 219.36  # H2O -> O(3P) + 2 H, 0 K; ATcT 917.80 kJ/mol
+BDE_D0_KCAL = 117.64  # H2O -> H + OH, 0 K; 41145.9 cm-1 (Maksyutenko et al. 2006)
+IE_ADIABATIC_EV = 12.621  # H2O -> H2O+ (X 2B1), NIST WebBook
+IE_VERTICAL_EV = (
+    12.62  # 1b1 band maximum; the 0-0 line is the most intense, so ~ adiabatic
+)
+OH_HARMONIC_CM = 3737.8  # OH X 2Pi, omega_e (Huber & Herzberg)
