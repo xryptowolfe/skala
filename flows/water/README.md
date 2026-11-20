@@ -15,7 +15,7 @@ from this repository. The first calculation downloads the skala-1.1 checkpoint
 from Hugging Face (about once; it is cached in `~/.cache/huggingface`).
 
 On a GPU, use the Colab notebook
-[`water_flows_colab.ipynb`](water_flows_colab.ipynb) or install `skala-cuda12x` (or `skala-cuda13x` on a CUDA 13 driver)
+[`water_flows_colab.ipynb`](water_flows_colab.ipynb) or install `skala-cuda12x` (it also works on CUDA 13 drivers; `skala-cuda13x` fails on a T4)
 and add `--device cuda` to any command.
 
 ## Usage
