@@ -34,9 +34,14 @@ def main(argv: list[str] | None = None) -> Run:
     p.add_argument("--xc", default=d.xc, help=f"Skala model (default {d.xc})")
     p.add_argument("--basis", default=d.basis, help=f"basis set (default {d.basis})")
     p.add_argument("--device", default=d.device, choices=["cpu", "cuda"])
-    p.add_argument("--no-dispersion", action="store_true", help="turn off the D3 correction")
     p.add_argument(
-        "--fmax", type=float, default=d.fmax, help=f"opt threshold, eV/A (default {d.fmax})"
+        "--no-dispersion", action="store_true", help="turn off the D3 correction"
+    )
+    p.add_argument(
+        "--fmax",
+        type=float,
+        default=d.fmax,
+        help=f"opt threshold, eV/A (default {d.fmax})",
     )
     p.add_argument(
         "--fd-step",
@@ -46,11 +51,16 @@ def main(argv: list[str] | None = None) -> Run:
     )
     p.add_argument("--temperature", type=float, default=d.temperature)
     p.add_argument("--pressure", type=float, default=d.pressure, help="Pa")
-    p.add_argument("--geometry", help="start from this .xyz instead of the ideal water geometry")
+    p.add_argument(
+        "--geometry", help="start from this .xyz instead of the ideal water geometry"
+    )
     p.add_argument("--scan-coord", choices=["angle", "stretch"], default="angle")
     p.add_argument("--scan-points", type=int, default=9)
     p.add_argument(
-        "--out", type=Path, default=Path("runs"), help="parent folder for results (default runs/)"
+        "--out",
+        type=Path,
+        default=Path("runs"),
+        help="parent folder for results (default runs/)",
     )
     a = p.parse_args(argv)
 
