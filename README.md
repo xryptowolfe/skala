@@ -13,6 +13,16 @@ The recommended neural functional is `skala-1.1`, which uses per-atom packed gri
 
 Learn more about Skala in our [ArXiv paper](https://arxiv.org/abs/2506.14665).
 
+> **This fork adds [`flows/water/`](flows/water)**: one-command Skala workflows for
+> H₂O (single point, optimization, frequencies with IR intensities,
+> thermochemistry, energy scans) on CPU or GPU, plus a
+> [Colab notebook](flows/water/water_flows_colab.ipynb).
+>
+> ```bash
+> bash flows/setup_env.sh
+> .venv/bin/python -m flows.water opt freq thermo
+> ```
+
 ## What's in here
 
 This repository contains five components:

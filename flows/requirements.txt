@@ -1,0 +1,5 @@
+# Extra packages for the flows/ examples (on top of `pip install -e ./skala`).
+ase
+matplotlib
+pytest
+pytest-timeout
