@@ -5,6 +5,7 @@ Run from the repository root:
     python -m flows.water.studies energetics    # atomization, O-H bond, ionization (UKS)
     python -m flows.water.studies dimer         # (H2O)2 hydrogen bond, D3 and counterpoise
     python -m flows.water.studies basis         # basis-set convergence and density fitting
+    python -m flows.water.studies solvation     # PCM solvation energy in several solvents
 Add --device cuda to run on a GPU.
 """
 
@@ -22,6 +23,7 @@ import numpy as np
 from ase import Atoms
 from ase.data.s22 import create_s22_system, get_interaction_energy_s22
 from ase.optimize import BFGS
+from ase.units import Debye
 from ase.vibrations import Vibrations
 
 from . import flows
@@ -387,6 +389,69 @@ def basis(s: Settings, study: Study) -> None:
     study.results["basis"] = rows
 
 
+# --------------------------------------------------------------------------- solvation
+
+
+SOLVENTS = [
+    "water",
+    "dmso",
+    "acetonitrile",
+    "methanol",
+    "chloroform",
+    "toluene",
+    "hexane",
+]
+
+
+def solvation(s: Settings, study: Study) -> None:
+    """Electrostatic solvation energy of H2O in several PCM solvents, plus relaxation in water."""
+    from .solvent import dielectric
+
+    study.say(f"== Solvation (IEF-PCM), {s.xc}/{s.basis}, D3={s.dispersion} ==")
+    gas = load_water(s)
+    _relax(gas, s, study.dir / "opt_gas.log")
+    e_gas = gas.get_potential_energy()
+    mu_gas = float(np.linalg.norm(gas.get_dipole_moment()) / Debye)
+    study.say(f"  gas: E {e_gas / HARTREE_EV:.8f} Ha, dipole {mu_gas:.3f} D")
+    study.say(f"\n  {'solvent':<14}{'eps':>8}{'dE_solv kcal/mol':>18}{'dipole D':>10}")
+    rows = {}
+    for name in SOLVENTS:
+        sv = replace(s, solvent=name)
+        a = gas.copy()
+        a.calc = make_calculator(sv)
+        de = (a.get_potential_energy() - e_gas) * KCAL_PER_EV
+        mu = float(np.linalg.norm(a.get_dipole_moment()) / Debye)
+        rows[name] = {"eps": dielectric(name), "dE_solv_kcal": de, "dipole_D": mu}
+        study.say(f"  {name:<14}{dielectric(name):8.2f}{de:18.2f}{mu:10.3f}")
+
+    # Relax in water: the solute polarizes and the geometry adjusts
+    sw = replace(s, solvent="water")
+    wat = gas.copy()
+    wat.calc = make_calculator(sw)
+    _relax(wat, sw, study.dir / "opt_water.log")
+    de_relaxed = (wat.get_potential_energy() - e_gas) * KCAL_PER_EV
+    g_gas, g_wat = geometry_summary(gas), geometry_summary(wat)
+    study.say(
+        f"\n  water, relaxed: dE_solv {de_relaxed:.2f} kcal/mol "
+        f"(exp. hydration free energy {ref.HYDRATION_DG_KCAL:.2f})"
+    )
+    study.say(
+        f"  geometry gas -> water: O-H {g_gas['r_OH1_A']:.4f} -> {g_wat['r_OH1_A']:.4f} A, "
+        f"HOH {g_gas['angle_HOH_deg']:.2f} -> {g_wat['angle_HOH_deg']:.2f} deg"
+    )
+    study.say(
+        "  PCM is electrostatics only: no cavity/dispersion terms and no explicit H-bonds."
+    )
+    study.results["solvation"] = {
+        "E_gas_Ha": e_gas / HARTREE_EV,
+        "dipole_gas_D": mu_gas,
+        "solvents": rows,
+        "water_relaxed_dE_kcal": de_relaxed,
+        "geometry_gas": g_gas,
+        "geometry_water": g_wat,
+    }
+
+
 # --------------------------------------------------------------------------- CLI
 
 STUDIES = {
@@ -394,6 +459,7 @@ STUDIES = {
     "energetics": energetics,
     "dimer": dimer,
     "basis": basis,
+    "solvation": solvation,
 }
 
 

@@ -2,6 +2,7 @@
 
 Examples (from the repository root):
     python -m flows.water sp                     # single point at the ideal geometry
+    python -m flows.water opt freq --solvent water   # in implicit water (PCM)
     python -m flows.water opt freq thermo        # the usual "opt freq" job
     python -m flows.water opt scan --scan-coord stretch
     python -m flows.water opt freq --device cuda # same on a GPU (needs gpu4pyscf)
@@ -54,6 +55,15 @@ def main(argv: list[str] | None = None) -> Run:
     p.add_argument(
         "--geometry", help="start from this .xyz instead of the ideal water geometry"
     )
+    p.add_argument(
+        "--solvent",
+        help="implicit solvent (PCM): water, acetonitrile, chloroform, ... or a dielectric",
+    )
+    p.add_argument(
+        "--solvent-model",
+        default="IEF-PCM",
+        choices=["IEF-PCM", "C-PCM", "COSMO", "SS(V)PE"],
+    )
     p.add_argument("--scan-coord", choices=["angle", "stretch"], default="angle")
     p.add_argument("--scan-points", type=int, default=9)
     p.add_argument(
@@ -74,13 +84,21 @@ def main(argv: list[str] | None = None) -> Run:
         temperature=a.temperature,
         pressure=a.pressure,
         geometry=a.geometry,
+        solvent=a.solvent,
+        solvent_model=a.solvent_model,
     )
     chosen = [f for f in ORDER if f in a.flows]
     run = Run(settings=s, flows=chosen, root=a.out)
     atoms = load_water(s)
     run.say(
-        f"Skala water flows: {' -> '.join(chosen)}   [{s.xc}/{s.basis}, {s.device}, D3={s.dispersion}]"
+        f"Skala water flows: {' -> '.join(chosen)}   [{s.xc}/{s.basis}, {s.device}, D3={s.dispersion}, "
+        f"{'gas' if not s.solvent else s.solvent_model + ' ' + s.solvent}]"
     )
+    if s.solvent:
+        run.say(
+            "Note: the 'exp.' columns are gas-phase experiment. PCM adds only the electrostatic "
+            "part of solvation (no hydrogen bonds to explicit solvent molecules)."
+        )
     run.save_xyz("start", atoms, "starting geometry")
 
     steps = {

@@ -44,6 +44,8 @@ optimized structure. `thermo` runs `freq` itself if needed.
 | `--fd-step` | `0.005` | finite-difference displacement for frequencies, Å |
 | `--temperature`, `--pressure` | `298.15`, `101325` | K, Pa, for `thermo` |
 | `--geometry` | ideal H₂O | start from an `.xyz` file (atoms in any order) |
+| `--solvent` | gas phase | implicit solvent (PCM): `water`, `dmso`, `acetonitrile`, `methanol`, `ethanol`, `acetone`, `dichloromethane`, `thf`, `chloroform`, `toluene`, `benzene`, `hexane`, or a dielectric constant |
+| `--solvent-model` | `IEF-PCM` | `IEF-PCM`, `C-PCM`, `COSMO` or `SS(V)PE` |
 | `--scan-coord`, `--scan-points` | `angle`, `9` | rigid scan of H–O–H ±15° or both O–H ±0.1 Å |
 | `--out` | `runs/` | parent folder for result folders |
 
@@ -160,6 +162,42 @@ def2-SVP is too small (angle 2.8° low). def2-TZVP and def2-QZVP agree within
 by 0.1–0.2 mHa and gives no consistent speedup for water: the neural XC
 evaluation, not the Coulomb term, dominates the cost. Timings vary by tens of
 percent between runs.
+
+### `solvation`: implicit solvent (~3 min)
+
+Any flow runs in a dielectric continuum with `--solvent`, for example
+`python -m flows.water opt freq --solvent water`. It wraps Skala in PySCF's PCM
+([`solvent.py`](solvent.py)); the analytic solvent gradient matches finite
+differences to 7×10⁻⁶ Ha/Bohr. The study computes the solvation energy at the
+gas-phase geometry in several solvents, then relaxes the molecule in water.
+
+| Solvent | ε | ΔE_solv (kcal/mol) | Dipole (D) |
+|---|---:|---:|---:|
+| gas | 1 | 0 | 2.074 |
+| hexane | 1.88 | −2.38 | 2.186 |
+| toluene | 2.37 | −3.10 | 2.221 |
+| chloroform | 4.71 | −4.71 | 2.297 |
+| methanol | 32.6 | −6.45 | 2.379 |
+| acetonitrile | 35.7 | −6.47 | 2.380 |
+| DMSO | 46.8 | −6.55 | 2.384 |
+| water | 78.4 | −6.64 | 2.388 |
+
+Relaxed in water: ΔE_solv −6.65 kcal/mol (experimental hydration free energy
+−6.32). The geometry and vibrations respond the way a polarizing environment
+should:
+
+| | Gas | PCM water |
+|---|---:|---:|
+| O–H (Å) | 0.9596 | 0.9622 |
+| H–O–H (°) | 103.93 | 103.11 |
+| Bend / sym. / asym. (cm⁻¹) | 1680 / 3865 / 3972 | 1651 / 3836 / 3925 |
+| IR intensities (km/mol) | 81 / 10 / 51 | 125 / 35 / 110 |
+
+PCM gives only the electrostatic part of solvation: no cavity or dispersion
+terms (as in SMD) and no hydrogen bonds to solvent molecules. Liquid water's
+large O–H stretch red shift (~250 cm⁻¹) comes from hydrogen bonding and needs
+explicit water molecules. The close match to the experimental hydration energy
+is partly a cancellation of these missing terms.
 
 ## How it works
 

@@ -24,3 +24,8 @@ IE_VERTICAL_EV = (
     12.62  # 1b1 band maximum; the 0-0 line is the most intense, so ~ adiabatic
 )
 OH_HARMONIC_CM = 3737.8  # OH X 2Pi, omega_e (Huber & Herzberg)
+
+# Solvation
+HYDRATION_DG_KCAL = (
+    -6.32
+)  # water in water, standard-state hydration free energy (MNSol)
