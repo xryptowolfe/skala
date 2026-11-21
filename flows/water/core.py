@@ -31,10 +31,29 @@ class Settings:
     pressure: float = 101325.0  # Pa
     geometry: str | None = None  # optional .xyz to start from instead of ideal H2O
     density_fit: bool = False  # density-fitted Coulomb term
+    solvent: str | None = None  # implicit solvent name or dielectric; None = gas phase
+    solvent_model: str = "IEF-PCM"  # PCM variant (see flows.water.solvent.MODELS)
 
 
 def make_calculator(s: Settings, charge: int = 0, multiplicity: int = 1) -> Skala:
-    """Skala ASE calculator. multiplicity > 1 or odd electron counts use UKS."""
+    """Skala ASE calculator. multiplicity > 1 or odd electron counts use UKS.
+
+    With ``s.solvent`` set, returns the PCM-wrapped calculator instead.
+    """
+    if s.solvent:
+        from .solvent import SkalaPCM
+
+        return SkalaPCM(
+            xc=s.xc,
+            basis=s.basis,
+            solvent=s.solvent,
+            model=s.solvent_model,
+            dispersion=s.dispersion,
+            density_fit=s.density_fit,
+            charge=charge,
+            multiplicity=multiplicity,
+            device=s.device,
+        )
     return Skala(
         xc=s.xc,
         basis=s.basis,

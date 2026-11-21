@@ -9,7 +9,13 @@ pytestmark = pytest.mark.timeout(900)
 
 
 def test_all_studies_registered():
-    assert set(studies.STUDIES) == {"functionals", "energetics", "dimer", "basis"}
+    assert set(studies.STUDIES) == {
+        "functionals",
+        "energetics",
+        "dimer",
+        "basis",
+        "solvation",
+    }
 
 
 def test_hydrogen_atom_open_shell():
@@ -31,3 +37,26 @@ def test_counterpoise_ghost_monomer_is_lower():
     ghost = studies._pyscf_energy(sym, pos, {3, 4, 5}, "pbe", s, False)
     assert ghost <= bare + 1e-8
     assert bare - ghost < 0.01  # BSSE is small (< ~6 kcal/mol)
+
+
+def test_solvent_lowers_energy_of_polar_molecule():
+    # A polar molecule is stabilized by a dielectric continuum; more so in water than hexane.
+    from ase.build import molecule
+
+    def energy(solvent):
+        w = molecule("H2O")
+        w.calc = make_calculator(Settings(basis="def2-svp", xc="pbe", solvent=solvent))
+        return w.get_potential_energy()
+
+    gas, hexane, water = energy(None), energy("hexane"), energy("water")
+    assert water < hexane < gas
+    assert -0.5 < (water - gas) < -0.1  # eV; about -5 kcal/mol
+
+
+def test_dielectric_lookup():
+    from flows.water.solvent import dielectric
+
+    assert dielectric("Water") == pytest.approx(78.3553)
+    assert dielectric("10") == 10.0
+    with pytest.raises(ValueError):
+        dielectric("not-a-solvent")
